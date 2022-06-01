@@ -5,38 +5,43 @@
 #include <sys/types.h>
 #include <string.h>
 
-void main()
-{
-    printf("Server Code Running..\n");
-    char tcp_buffer[50];
-    int sockfd, connfd;
-    // Create server scoket
-    sockfd = socket(AF_INET, SOCK_STREAM, 0);
-    struct sockaddr_in addr1, addr2;
-    /// Assign IP and PORT
-    addr1.sin_family = AF_INET;
-    addr1.sin_addr.s_addr = INADDR_ANY;
-    addr1.sin_port = 4444;
-    int s = sizeof(struct sockaddr_in);
-    // Bind newly created socket to given IP
-    bind(sockfd, (struct sockaddr *)&addr1, sizeof(addr1));
-    // Now server is ready to listen
-    listen(sockfd, 5);
-    // accept the data packet from client
-    connfd = accept(sockfd, (struct sockaddr *)&addr2, (&s));
-    printf("Chat with the client. Type exit to close the chat.");
-    do
-    {
-        printf("Waiting for response from client..\n");
-        recv(connfd, tcp_buffer, sizeof(tcp_buffer), 0);
-        printf("Received message from client: %s\n", tcp_buffer);
-        printf("Enter your message: \n");
-        gets(tcp_buffer);
-        send(connfd, tcp_buffer, sizeof(tcp_buffer), 0);
-    } 
-    // The loop will continue until an exit message is typed from the server side
-    while (strcmp(tcp_buffer, "exit") != 0);
+int main(){
+  int welcomeSocket, newSocket;
+  char buffer[100];
+  struct sockaddr_in serverAddr;
+  struct sockaddr_storage serverStorage;
+  socklen_t addr_size;
 
-    close(connfd);
-    close(sockfd);
+  // Create the socket.
+  welcomeSocket = socket(PF_INET, SOCK_STREAM, 0);
+   if(welcomeSocket < 0){
+        printf("Unable to create socket\n");
+        return -1;
+    }
+    printf("Socket created successfully.\n");
+
+  // Set the IP and PORT, Note that we are using the same port as in the client code
+  serverAddr.sin_family = AF_INET;
+  serverAddr.sin_port = htons(2000);
+  serverAddr.sin_addr.s_addr = INADDR_ANY;
+
+  // Bind the address struct to the socket
+  bind(welcomeSocket, (struct sockaddr *) &serverAddr, sizeof(serverAddr));
+
+  // Listen on the socket, with 5 max connection requests queued
+  listen(welcomeSocket,5);
+
+  // Accept call creates a new socket for the incoming connection
+  addr_size = sizeof serverStorage;
+  newSocket = accept(welcomeSocket, (struct sockaddr *) &serverStorage, &addr_size);
+
+  recv(newSocket,buffer,sizeof(buffer),0);
+  printf("Data received from client: %s\n", buffer);
+  // Send message to the socket of the incoming connection 
+  send(newSocket,"Message recieved Succesfully",sizeof(buffer),0);
+  printf("Closing Connections");
+  close(newSocket);
+  close(welcomeSocket);
+
+  return 0;
 }
